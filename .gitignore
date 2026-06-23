@@ -1,0 +1,30 @@
+# Environment variables
+.env
+.env.local
+
+# Outputs
+outputs/*
+!outputs/.gitkeep
+reports/summary.md
+
+# Python cache and builds
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Streamlit
+.streamlit/
+
+# Temporary portable tools
+git-temp/
