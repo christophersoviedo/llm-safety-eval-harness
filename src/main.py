@@ -21,8 +21,8 @@ def main():
     parser.add_argument(
         "--model", 
         type=str, 
-        default="claude-3-5-sonnet-20241022",
-        help="Model identifier (e.g. gpt-4o-mini, claude-3-5-sonnet-20241022)."
+        default="claude-sonnet-4-5-20250929",
+        help="Model identifier (e.g. gpt-4o-mini, claude-sonnet-4-5-20250929)."
     )
     parser.add_argument(
         "--mock", 
@@ -75,8 +75,8 @@ def main():
     parser.add_argument(
         "--judge-model",
         type=str,
-        default="claude-3-5-sonnet-20241022",
-        help="Model used as the LLM-as-a-Judge (default: claude-3-5-sonnet-20241022)."
+        default="claude-sonnet-4-5-20250929",
+        help="Model used as the LLM-as-a-Judge (default: claude-sonnet-4-5-20250929)."
     )
     args = parser.parse_args()
 
