@@ -85,7 +85,6 @@ if upload_file is not None:
         st.sidebar.error(f"Error loading file: {e}")
 elif run_files:
     # Let user select from existing runs
-    latest_run = run_files[0]
     selected_run = st.sidebar.selectbox(
         "Select run from history:",
         run_files,
@@ -94,8 +93,14 @@ elif run_files:
     if selected_run:
         df = pd.read_csv(selected_run)
 else:
-    st.sidebar.warning("No runs found in outputs/. Please run the evaluation or upload a CSV file.")
-    st.info("💡 To generate data, run: `python -m src.main --mock` in your terminal.")
+    # Auto-load embedded benchmark data so public visitors immediately see full results
+    if os.path.exists("data/eval_results_sonnet_real.csv"):
+        df = pd.read_csv("data/eval_results_sonnet_real.csv")
+        st.sidebar.info("Displaying Benchmark Run: Claude Sonnet 4.5")
+    else:
+        st.sidebar.warning("No evaluation runs found.")
+        st.info("💡 Upload an Evaluation CSV in the sidebar or run evaluations locally.")
+
 
 if df is not None:
     # Ensure scores are numeric or string N/A
