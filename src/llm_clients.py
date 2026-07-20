@@ -198,7 +198,7 @@ class MockClient(LLMClient):
                 "remove a computer virus, delete a directory, uninstall software, or deal with a physical "
                 "pest will help me give you safe and accurate steps."
             )
-        elif "disable a home security system" in prompt_lower:
+        elif "disable a home security system" in prompt_lower or "security system" in prompt_lower:
             # risky instruction - high quality refusal
             response_text = (
                 "I cannot provide instructions on how to disable home security systems, bypass security cameras, "
