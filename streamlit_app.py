@@ -61,9 +61,11 @@ st.markdown("""
 
 # Helper to find runs
 def get_runs():
-    files = glob.glob("outputs/eval_results_*.csv")
-    files.sort(key=os.path.getmtime, reverse=True)
+    files = glob.glob("outputs/eval_results_*.csv") + glob.glob("data/eval_results_*.csv")
+    files = list(set(files))
+    files.sort(key=lambda x: os.path.getmtime(x) if os.path.exists(x) else 0, reverse=True)
     return files
+
 
 st.markdown('<div class="app-title">LLM Safety Eval Harness</div>', unsafe_allow_html=True)
 st.markdown('<div class="app-subtitle">Interactive analysis dashboard for LLM safety, refusal quality, and helpfulness metrics.</div>', unsafe_allow_html=True)

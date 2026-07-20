@@ -5,6 +5,9 @@
 # Outputs
 outputs/*
 !outputs/.gitkeep
+!outputs/eval_results_haiku_real.csv
+!outputs/eval_results_sonnet_real.csv
+
 reports/summary.md
 
 # Python cache and builds
