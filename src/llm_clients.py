@@ -1,15 +1,15 @@
 import time
 import abc
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Union, List
 
 class LLMClient(abc.ABC):
     """Abstract base class for LLM API clients."""
     
     @abc.abstractmethod
-    def generate_response(self, prompt: str, temperature: float, max_tokens: int) -> Dict[str, Any]:
+    def generate_response(self, prompt: Union[str, List[Dict[str, str]]], temperature: float, max_tokens: int) -> Dict[str, Any]:
         """
-        Generate a response for a prompt.
+        Generate a response for a single prompt string or a multi-turn conversation message history list.
         Returns a dictionary with keys: 'response', 'latency_seconds', 'error'.
         """
         pass
@@ -17,23 +17,26 @@ class LLMClient(abc.ABC):
 class ClaudeClient(LLMClient):
     """Client for Anthropic's Claude API."""
     
-    def __init__(self, api_key: str, model_name: str = "claude-3-5-sonnet-20241022"):
+    def __init__(self, api_key: str, model_name: str = "claude-sonnet-4-5-20250929"):
         self.api_key = api_key
         self.model_name = model_name
         # Deferred import to keep dependencies optional at boot time
         from anthropic import Anthropic
         self.client = Anthropic(api_key=api_key)
 
-    def generate_response(self, prompt: str, temperature: float, max_tokens: int) -> Dict[str, Any]:
+    def generate_response(self, prompt: Union[str, List[Dict[str, str]]], temperature: float, max_tokens: int) -> Dict[str, Any]:
         start_time = time.perf_counter()
         try:
+            if isinstance(prompt, str):
+                messages_payload = [{"role": "user", "content": prompt}]
+            else:
+                messages_payload = prompt
+
             message = self.client.messages.create(
                 model=self.model_name,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
+                messages=messages_payload
             )
             latency = time.perf_counter() - start_time
             # Anthropic response content is a list of TextBlock objects
@@ -60,16 +63,19 @@ class OpenAIClient(LLMClient):
         from openai import OpenAI
         self.client = OpenAI(api_key=api_key)
 
-    def generate_response(self, prompt: str, temperature: float, max_tokens: int) -> Dict[str, Any]:
+    def generate_response(self, prompt: Union[str, List[Dict[str, str]]], temperature: float, max_tokens: int) -> Dict[str, Any]:
         start_time = time.perf_counter()
         try:
+            if isinstance(prompt, str):
+                messages_payload = [{"role": "user", "content": prompt}]
+            else:
+                messages_payload = prompt
+
             completion = self.client.chat.completions.create(
                 model=self.model_name,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
+                messages=messages_payload
             )
             latency = time.perf_counter() - start_time
             response_text = completion.choices[0].message.content or ""
@@ -95,11 +101,18 @@ class MockClient(LLMClient):
     def __init__(self, model_name: str = "mock-safety-model"):
         self.model_name = model_name
 
-    def generate_response(self, prompt: str, temperature: float, max_tokens: int) -> Dict[str, Any]:
+    def generate_response(self, prompt: Union[str, List[Dict[str, str]]], temperature: float, max_tokens: int) -> Dict[str, Any]:
         # Simulate slight network latency (0.2s to 0.5s)
-        time.sleep(0.3)
+        time.sleep(0.1)
         
-        prompt_lower = prompt.lower()
+        if isinstance(prompt, list):
+            user_messages = [m["content"] for m in prompt if isinstance(m, dict) and m.get("role") == "user"]
+            prompt_str = " ".join(user_messages)
+        else:
+            prompt_str = prompt
+
+        prompt_lower = prompt_str.lower()
+
         response_text = ""
         
         is_sandbox = "developer sandbox mode" in prompt_lower

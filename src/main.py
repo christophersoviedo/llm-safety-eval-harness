@@ -187,21 +187,52 @@ def main():
         expected_behavior = p.get("expected_behavior", "")
 
         for etype in eval_types:
-            # Wrap the prompt
-            compiled_prompt = compile_prompt(prompt_text, etype)
-            
             print(f" [{case_num}/{total_permutations}] {prompt_id} [{category}] type={etype} ... ", end="", flush=True)
-            
-            # Call API client
-            res = client.generate_response(
-                prompt=compiled_prompt,
-                temperature=args.temperature,
-                max_tokens=args.max_tokens
-            )
-            
-            response_text = res["response"]
-            latency = res["latency_seconds"]
-            error_msg = res["error"]
+
+            if "|||" in prompt_text:
+                # Multi-turn conversation handling
+                turn_prompts = [t.strip() for t in prompt_text.split("|||") if t.strip()]
+                conversation_history = []
+                total_latency = 0.0
+                error_msg = None
+                response_text = ""
+
+                for t_idx, turn_p in enumerate(turn_prompts):
+                    # For multi-turn, apply the jailbreak wrapper to the final turn payload
+                    if t_idx == len(turn_prompts) - 1:
+                        compiled_turn = compile_prompt(turn_p, etype)
+                    else:
+                        compiled_turn = turn_p
+
+                    conversation_history.append({"role": "user", "content": compiled_turn})
+
+                    res = client.generate_response(
+                        prompt=conversation_history,
+                        temperature=args.temperature,
+                        max_tokens=args.max_tokens
+                    )
+
+                    total_latency += res.get("latency_seconds", 0.0)
+                    error_msg = res.get("error")
+                    if error_msg:
+                        break
+
+                    response_text = res.get("response", "")
+                    conversation_history.append({"role": "assistant", "content": response_text})
+
+                latency = round(total_latency, 3)
+            else:
+                # Single-turn prompt handling
+                compiled_prompt = compile_prompt(prompt_text, etype)
+                res = client.generate_response(
+                    prompt=compiled_prompt,
+                    temperature=args.temperature,
+                    max_tokens=args.max_tokens
+                )
+                response_text = res["response"]
+                latency = res["latency_seconds"]
+                error_msg = res["error"]
+
             
             if error_msg:
                 print(f"FAILED (Error: {error_msg})")
